@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - YTDL Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --accent: #00d4aa;
+      --accent-dim: #00d4aa33;
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --border: #2a2a3a;
+      --success: #00d4aa;
+      --error: #ff6b6b;
+      --warning: #ffd93d;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse at 20% 0%, var(--accent-dim) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, #6366f133 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .back-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-card.accent .stat-value {
+      color: var(--accent);
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    td {
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    tr:hover td {
+      background: var(--bg-secondary);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .badge.video {
+      background: #6366f133;
+      color: #a5b4fc;
+    }
+
+    .badge.audio {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .badge.completed {
+      background: #00d4aa22;
+      color: var(--success);
+    }
+
+    .badge.failed {
+      background: #ff6b6b22;
+      color: var(--error);
+    }
+
+    .badge.started {
+      background: #ffd93d22;
+      color: var(--warning);
+    }
+
+    .chart-container {
+      padding: 1.5rem;
+      height: 300px;
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: linear-gradient(to top, var(--accent), #6366f1);
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: opacity 0.2s;
+      position: relative;
+    }
+
+    .chart-bar:hover {
+      opacity: 0.8;
+    }
+
+    .chart-bar::after {
+      content: attr(data-value);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      padding-bottom: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .chart-bar:hover::after {
+      opacity: 1;
+    }
+
+    .text-truncate {
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .text-muted {
+      color: var(--text-secondary);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-secondary);
+    }
+
+    .error-msg {
+      background: #ff6b6b22;
+      border: 1px solid var(--error);
+      color: var(--error);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .refresh-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .delay-3 { animation-delay: 0.3s; opacity: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Download Statistics</h1>
+      <div class="header-actions">
+        <button class="refresh-btn" onclick="loadStats()">↻ Refresh</button>
+        <a href="/" class="back-link">← Back to Downloader</a>
+      </div>
+    </header>
+
+    <div id="error" class="error-msg" style="display: none;"></div>
+    <div id="loading" class="loading">Loading statistics...</div>
+    <div id="content" style="display: none;">
+      
+      <!-- Summary Stats -->
+      <div class="stats-grid animate-in">
+        <div class="stat-card accent">
+          <div class="stat-label">Total Downloads</div>
+          <div class="stat-value" id="totalDownloads">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Video Downloads</div>
+          <div class="stat-value" id="videoDownloads">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Audio Downloads</div>
+          <div class="stat-value" id="audioDownloads">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unique Users</div>
+          <div class="stat-value" id="uniqueUsers">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Success Rate</div>
+          <div class="stat-value" id="successRate">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value" id="todayDownloads">0</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="section animate-in delay-1">
+        <h2 class="section-title">Last 30 Days</h2>
+        <div class="panel">
+          <div class="chart-container" id="chart"></div>
+        </div>
+      </div>
+
+      <!-- Two Column Layout -->
+      <div class="two-col">
+        <!-- Top Videos -->
+        <div class="section animate-in delay-2">
+          <h2 class="section-title">Top Videos</h2>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Video</th>
+                  <th>Downloads</th>
+                </tr>
+              </thead>
+              <tbody id="topVideos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Downloads -->
+        <div class="section animate-in delay-3">
+          <h2 class="section-title">Recent Downloads</h2>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Video</th>
+                  <th>Format</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recentDownloads"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadStats() {
+      const loading = document.getElementById('loading');
+      const content = document.getElementById('content');
+      const error = document.getElementById('error');
+
+      loading.style.display = 'block';
+      content.style.display = 'none';
+      error.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/stats');
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const data = await res.json();
+
+        // Update summary stats
+        const totals = data.totals || {};
+        document.getElementById('totalDownloads').textContent = totals.total_downloads || 0;
+        document.getElementById('videoDownloads').textContent = totals.video_downloads || 0;
+        document.getElementById('audioDownloads').textContent = totals.audio_downloads || 0;
+        document.getElementById('uniqueUsers').textContent = totals.unique_users || 0;
+        
+        const successRate = totals.total_downloads > 0 
+          ? Math.round((totals.successful / totals.total_downloads) * 100) 
+          : 0;
+        document.getElementById('successRate').textContent = successRate + '%';
+
+        document.getElementById('todayDownloads').textContent = data.today?.downloads || 0;
+
+        // Render chart
+        renderChart(data.dailyTrend || []);
+
+        // Render top videos
+        renderTopVideos(data.topVideos || []);
+
+        // Render recent downloads
+        renderRecentDownloads(data.recentDownloads || []);
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+      } catch (err) {
+        loading.style.display = 'none';
+        error.textContent = 'Failed to load statistics: ' + err.message;
+        error.style.display = 'block';
+      }
+    }
+
+    function renderChart(data) {
+      const container = document.getElementById('chart');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = '<div class="text-muted" style="margin: auto;">No data yet</div>';
+        return;
+      }
+
+      const max = Math.max(...data.map(d => d.downloads), 1);
+
+      data.forEach(d => {
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = `${(d.downloads / max) * 100}%`;
+        bar.setAttribute('data-value', d.downloads);
+        bar.title = `${d.date}: ${d.downloads} downloads`;
+        container.appendChild(bar);
+      });
+    }
+
+    function renderTopVideos(videos) {
+      const tbody = document.getElementById('topVideos');
+      
+      if (videos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="text-muted">No videos yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = videos.map(v => `
+        <tr>
+          <td>
+            <div class="text-truncate">${escapeHtml(v.video_title || 'Unknown')}</div>
+            <div class="text-muted" style="font-size: 0.8rem;">${escapeHtml(v.video_uploader || '')}</div>
+          </td>
+          <td><strong>${v.download_count}</strong></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRecentDownloads(downloads) {
+      const tbody = document.getElementById('recentDownloads');
+      
+      if (downloads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No downloads yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = downloads.slice(0, 10).map(d => `
+        <tr>
+          <td class="text-truncate">${escapeHtml(d.video_title || 'Unknown')}</td>
+          <td><span class="badge ${d.format}">${d.format}</span></td>
+          <td><span class="badge ${d.status}">${d.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load on page load
+    loadStats();
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>
+
