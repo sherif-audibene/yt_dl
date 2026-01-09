@@ -2,14 +2,32 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { DOWNLOADS_DIR } = require('../config');
+const { DOWNLOADS_DIR, COOKIES_FILE } = require('../config');
+
+/**
+ * Check if URL is a YouTube URL
+ */
+const isYouTubeUrl = (url) => {
+  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)/i.test(url);
+};
+
+/**
+ * Get cookies args if YouTube URL and cookies file exists
+ */
+const getCookiesArgs = (url) => {
+  if (isYouTubeUrl(url) && fs.existsSync(COOKIES_FILE)) {
+    return ['--cookies', COOKIES_FILE];
+  }
+  return [];
+};
 
 /**
  * Fetches video metadata from a URL
  */
 const getVideoInfo = (url) => {
   return new Promise((resolve, reject) => {
-    const ytdlp = spawn('yt-dlp', ['--dump-json', '--no-playlist', url]);
+    const args = ['--dump-json', '--no-playlist', ...getCookiesArgs(url), url];
+    const ytdlp = spawn('yt-dlp', args);
 
     let data = '';
     let error = '';
@@ -62,6 +80,7 @@ const downloadMedia = (url, isAudio = false, onProgress = null) => {
       '--no-playlist',
       '--restrict-filenames',
       '--newline', // Output progress on new lines for easier parsing
+      ...getCookiesArgs(url),
     ];
 
     if (isAudio) {

@@ -4,6 +4,7 @@ require('dotenv').config();
 module.exports = {
   PORT: process.env.PORT || 3000,
   DOWNLOADS_DIR: path.join(__dirname, '..', 'downloads'),
+  COOKIES_FILE: process.env.COOKIES_FILE || path.join(__dirname, '..', 'cookies.txt'),
   FILE_CLEANUP_AGE_MS: 3600000, // 1 hour
 
   // Database

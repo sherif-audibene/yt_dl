@@ -39,7 +39,7 @@ pipeline {
                         cat > .env << EOF
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_USER=app_user
+DB_USER=admin
 DB_PASSWORD=${DB_PASSWORD}
 DB_NAME=app_db
 NODE_ENV=production
