@@ -3,6 +3,7 @@ const path = require('path');
 
 const { PORT } = require('./config');
 const downloadRoutes = require('./routes/download');
+const trimmerRoutes = require('./routes/trimmer');
 const { ensureDownloadsDir, cleanupOldFiles } = require('./utils/cleanup');
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/', downloadRoutes);
+app.use('/', trimmerRoutes);
 
 // Clean up old files on startup
 cleanupOldFiles();

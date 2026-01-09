@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Trimmer - Sherif Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a25;
+      --accent: #ff3366;
+      --accent-secondary: #00d4aa;
+      --accent-glow: rgba(255, 51, 102, 0.3);
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --border: #2a2a3a;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      min-height: 100vh;
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: 
+        radial-gradient(ellipse at 20% 20%, rgba(255, 51, 102, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    }
+
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: 
+        linear-gradient(rgba(255, 51, 102, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 51, 102, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent-secondary), #00a888);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0, 212, 170, 0.3);
+    }
+
+    .logo-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: white;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      font-weight: 300;
+      margin-top: 8px;
+    }
+
+    .back-link {
+      position: absolute;
+      top: 40px;
+      left: 24px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .back-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      backdrop-filter: blur(20px);
+      margin-bottom: 24px;
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: var(--bg-secondary);
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(255, 51, 102, 0.05);
+    }
+
+    .upload-zone.has-file {
+      border-style: solid;
+      border-color: var(--accent-secondary);
+      background: rgba(0, 212, 170, 0.05);
+    }
+
+    .upload-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--accent), #cc2952);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: white;
+    }
+
+    .upload-zone h3 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .upload-zone p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: var(--accent-secondary);
+    }
+
+    .remove-file {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    .remove-file svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* Waveform container */
+    .waveform-section {
+      display: none;
+    }
+
+    .waveform-section.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .waveform-container {
+      position: relative;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .waveform-wrapper {
+      position: relative;
+      height: 120px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #waveform {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Selection overlay */
+    .selection-overlay {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .selection-left {
+      left: 0;
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .selection-right {
+      right: 0;
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .selection-active {
+      background: rgba(0, 212, 170, 0.15);
+      border-left: 2px solid var(--accent-secondary);
+      border-right: 2px solid var(--accent-secondary);
+    }
+
+    /* Trim handles */
+    .trim-handle {
+      position: absolute;
+      top: 0;
+      width: 16px;
+      height: 100%;
+      cursor: ew-resize;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .trim-handle::before {
+      content: '';
+      width: 4px;
+      height: 40px;
+      background: var(--accent-secondary);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+    }
+
+    .trim-handle-left {
+      left: 0;
+      transform: translateX(-50%);
+    }
+
+    .trim-handle-right {
+      right: 0;
+      transform: translateX(50%);
+    }
+
+    /* Playhead */
+    .playhead {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      z-index: 5;
+      pointer-events: none;
+      display: none;
+    }
+
+    .playhead.playing {
+      display: block;
+    }
+
+    /* Time display */
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .time-inputs {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .time-input-group {
+      flex: 1;
+    }
+
+    .time-input-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .time-input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .time-input-group input:focus {
+      outline: none;
+      border-color: var(--accent-secondary);
+      box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.2);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .btn-icon {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .btn-play {
+      background: linear-gradient(135deg, var(--accent), #cc2952);
+      color: white;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .btn-play:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-secondary), #00a888);
+      color: white;
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+      flex: 1;
+      max-width: 200px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(0, 212, 170, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Status */
+    .status {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status.show {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .status.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+    }
+
+    .status.success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: var(--success);
+    }
+
+    .status svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* Duration info */
+    .duration-info {
+      display: flex;
+      gap: 24px;
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .duration-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .duration-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .duration-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .duration-value.accent {
+      color: var(--accent-secondary);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 80px 16px 40px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .time-inputs {
+        width: 100%;
+      }
+
+      .btn-primary {
+        max-width: none;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+  <div class="grid-overlay"></div>
+  
+  <div class="container">
+    <a href="/" class="back-link">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Back to Downloader
+    </a>
+
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        </div>
+      </div>
+      <h1>Audio Trimmer</h1>
+      <p class="subtitle">Upload, trim, and download your audio</p>
+    </header>
+
+    <!-- Upload Card -->
+    <div class="card" id="uploadCard">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="audio/*" hidden>
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        </div>
+        <h3>Drop your audio file here</h3>
+        <p>or click to browse (MP3, WAV, M4A, OGG)</p>
+        <div class="file-info" id="fileInfo" style="display: none;">
+          <span class="file-name" id="fileName"></span>
+          <button class="remove-file" id="removeFile">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waveform & Editor Card -->
+    <div class="card waveform-section" id="editorCard">
+      <div class="duration-info">
+        <div class="duration-item">
+          <span class="duration-label">Original</span>
+          <span class="duration-value" id="originalDuration">0:00</span>
+        </div>
+        <div class="duration-item">
+          <span class="duration-label">Selected</span>
+          <span class="duration-value accent" id="selectedDuration">0:00</span>
+        </div>
+      </div>
+
+      <div class="waveform-container">
+        <div class="waveform-wrapper" id="waveformWrapper">
+          <canvas id="waveform"></canvas>
+          <div class="selection-overlay selection-left" id="selectionLeft"></div>
+          <div class="selection-overlay selection-active" id="selectionActive">
+            <div class="trim-handle trim-handle-left" id="handleLeft"></div>
+            <div class="trim-handle trim-handle-right" id="handleRight"></div>
+          </div>
+          <div class="selection-overlay selection-right" id="selectionRight"></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+        <div class="time-display">
+          <span id="startTimeDisplay">0:00</span>
+          <span id="endTimeDisplay">0:00</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-icon btn-play" id="playBtn" title="Play selection">
+          <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        
+        <div class="time-inputs">
+          <div class="time-input-group">
+            <label for="startTime">Start Time</label>
+            <input type="text" id="startTime" placeholder="0:00.000" value="0:00.000">
+          </div>
+          <div class="time-input-group">
+            <label for="endTime">End Time</label>
+            <input type="text" id="endTime" placeholder="0:00.000">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="trimBtn">
+          <svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg>
+          <span>Trim & Download</span>
+        </button>
+      </div>
+
+      <div class="status" id="status">
+        <svg viewBox="0 0 24 24"></svg>
+        <span id="statusText"></span>
+      </div>
+    </div>
+
+    <footer>
+      Part of <a href="/">Sherif Downloader</a> toolkit
+    </footer>
+  </div>
+
+  <script>
+    // DOM Elements
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const removeFileBtn = document.getElementById('removeFile');
+    const editorCard = document.getElementById('editorCard');
+    const waveformCanvas = document.getElementById('waveform');
+    const waveformWrapper = document.getElementById('waveformWrapper');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const trimBtn = document.getElementById('trimBtn');
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    const status = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const playhead = document.getElementById('playhead');
+    
+    // Selection elements
+    const selectionLeft = document.getElementById('selectionLeft');
+    const selectionActive = document.getElementById('selectionActive');
+    const selectionRight = document.getElementById('selectionRight');
+    const handleLeft = document.getElementById('handleLeft');
+    const handleRight = document.getElementById('handleRight');
+
+    // State
+    let audioContext = null;
+    let audioBuffer = null;
+    let audioSource = null;
+    let uploadedFile = null;
+    let duration = 0;
+    let trimStart = 0;
+    let trimEnd = 0;
+    let isPlaying = false;
+    let playStartTime = 0;
+    let playOffset = 0;
+    let animationFrame = null;
+
+    // Initialize
+    function init() {
+      // Upload zone events
+      uploadZone.addEventListener('click', () => fileInput.click());
+      uploadZone.addEventListener('dragover', handleDragOver);
+      uploadZone.addEventListener('dragleave', handleDragLeave);
+      uploadZone.addEventListener('drop', handleDrop);
+      fileInput.addEventListener('change', handleFileSelect);
+      removeFileBtn.addEventListener('click', handleRemoveFile);
+      
+      // Playback controls
+      playBtn.addEventListener('click', togglePlayback);
+      
+      // Trim button
+      trimBtn.addEventListener('click', handleTrim);
+      
+      // Time inputs
+      startTimeInput.addEventListener('change', handleTimeInputChange);
+      endTimeInput.addEventListener('change', handleTimeInputChange);
+      
+      // Handle dragging
+      setupDragHandles();
+    }
+
+    // Drag & Drop handlers
+    function handleDragOver(e) {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type.startsWith('audio/')) {
+        loadAudioFile(files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        loadAudioFile(e.target.files[0]);
+      }
+    }
+
+    function handleRemoveFile(e) {
+      e.stopPropagation();
+      resetEditor();
+    }
+
+    function resetEditor() {
+      uploadedFile = null;
+      audioBuffer = null;
+      duration = 0;
+      trimStart = 0;
+      trimEnd = 0;
+      
+      uploadZone.classList.remove('has-file');
+      fileInfo.style.display = 'none';
+      editorCard.classList.remove('show');
+      fileInput.value = '';
+      
+      if (isPlaying) stopPlayback();
+    }
+
+    // Load and process audio file
+    async function loadAudioFile(file) {
+      uploadedFile = file;
+      fileName.textContent = file.name;
+      fileInfo.style.display = 'flex';
+      uploadZone.classList.add('has-file');
+      
+      // Create audio context
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        duration = audioBuffer.duration;
+        trimStart = 0;
+        trimEnd = duration;
+        
+        // Update UI
+        document.getElementById('originalDuration').textContent = formatTime(duration);
+        document.getElementById('selectedDuration').textContent = formatTime(duration);
+        endTimeInput.value = formatTimeDetailed(duration);
+        startTimeInput.value = '0:00.000';
+        document.getElementById('endTimeDisplay').textContent = formatTime(duration);
+        
+        // Draw waveform
+        drawWaveform();
+        updateSelection();
+        
+        // Show editor
+        editorCard.classList.add('show');
+      } catch (err) {
+        showStatus('error', 'Failed to load audio file');
+        console.error(err);
+      }
+    }
+
+    // Draw waveform
+    function drawWaveform() {
+      const canvas = waveformCanvas;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Set canvas size
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      
+      // Clear canvas
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Get audio data
+      const channelData = audioBuffer.getChannelData(0);
+      const step = Math.ceil(channelData.length / width);
+      const amp = height / 2;
+      
+      // Draw waveform bars
+      ctx.fillStyle = '#ff3366';
+      
+      for (let i = 0; i < width; i++) {
+        let min = 1.0;
+        let max = -1.0;
+        
+        for (let j = 0; j < step; j++) {
+          const datum = channelData[(i * step) + j];
+          if (datum < min) min = datum;
+          if (datum > max) max = datum;
+        }
+        
+        const barHeight = Math.max(2, (max - min) * amp * 0.8);
+        const y = amp - barHeight / 2;
+        
+        // Create gradient effect
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, '#ff3366');
+        gradient.addColorStop(0.5, '#ff6699');
+        gradient.addColorStop(1, '#ff3366');
+        ctx.fillStyle = gradient;
+        
+        ctx.fillRect(i, y, 1, barHeight);
+      }
+    }
+
+    // Setup drag handles
+    function setupDragHandles() {
+      let dragging = null;
+      let startX = 0;
+      let startPos = 0;
+      
+      const onMouseDown = (e, handle) => {
+        e.preventDefault();
+        dragging = handle;
+        startX = e.clientX || e.touches[0].clientX;
+        startPos = handle === 'left' ? trimStart : trimEnd;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('touchmove', onMouseMove);
+        document.addEventListener('touchend', onMouseUp);
+      };
+      
+      handleLeft.addEventListener('mousedown', (e) => onMouseDown(e, 'left'));
+      handleRight.addEventListener('mousedown', (e) => onMouseDown(e, 'right'));
+      handleLeft.addEventListener('touchstart', (e) => onMouseDown(e, 'left'));
+      handleRight.addEventListener('touchstart', (e) => onMouseDown(e, 'right'));
+      
+      const onMouseMove = (e) => {
+        if (!dragging) return;
+        
+        const clientX = e.clientX || e.touches[0].clientX;
+        const rect = waveformWrapper.getBoundingClientRect();
+        const dx = clientX - startX;
+        const dTime = (dx / rect.width) * duration;
+        
+        if (dragging === 'left') {
+          trimStart = Math.max(0, Math.min(trimEnd - 0.1, startPos + dTime));
+        } else {
+          trimEnd = Math.max(trimStart + 0.1, Math.min(duration, startPos + dTime));
+        }
+        
+        updateSelection();
+        updateTimeInputs();
+      };
+      
+      const onMouseUp = () => {
+        dragging = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('touchmove', onMouseMove);
+        document.removeEventListener('touchend', onMouseUp);
+      };
+      
+      // Click on waveform to set position
+      waveformWrapper.addEventListener('click', (e) => {
+        if (e.target === handleLeft || e.target === handleRight) return;
+        
+        const rect = waveformWrapper.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const clickTime = (x / rect.width) * duration;
+        
+        // Move nearest handle
+        const distToStart = Math.abs(clickTime - trimStart);
+        const distToEnd = Math.abs(clickTime - trimEnd);
+        
+        if (distToStart < distToEnd) {
+          trimStart = Math.max(0, Math.min(trimEnd - 0.1, clickTime));
+        } else {
+          trimEnd = Math.max(trimStart + 0.1, Math.min(duration, clickTime));
+        }
+        
+        updateSelection();
+        updateTimeInputs();
+      });
+    }
+
+    // Update selection overlay
+    function updateSelection() {
+      const startPercent = (trimStart / duration) * 100;
+      const endPercent = (trimEnd / duration) * 100;
+      
+      selectionLeft.style.width = `${startPercent}%`;
+      selectionRight.style.width = `${100 - endPercent}%`;
+      selectionActive.style.left = `${startPercent}%`;
+      selectionActive.style.width = `${endPercent - startPercent}%`;
+      
+      document.getElementById('startTimeDisplay').textContent = formatTime(trimStart);
+      document.getElementById('endTimeDisplay').textContent = formatTime(trimEnd);
+      document.getElementById('selectedDuration').textContent = formatTime(trimEnd - trimStart);
+    }
+
+    // Update time inputs
+    function updateTimeInputs() {
+      startTimeInput.value = formatTimeDetailed(trimStart);
+      endTimeInput.value = formatTimeDetailed(trimEnd);
+    }
+
+    // Handle time input change
+    function handleTimeInputChange() {
+      const newStart = parseTime(startTimeInput.value);
+      const newEnd = parseTime(endTimeInput.value);
+      
+      if (!isNaN(newStart) && newStart >= 0 && newStart < trimEnd) {
+        trimStart = Math.min(newStart, duration);
+      }
+      
+      if (!isNaN(newEnd) && newEnd > trimStart && newEnd <= duration) {
+        trimEnd = newEnd;
+      }
+      
+      updateSelection();
+      updateTimeInputs();
+    }
+
+    // Playback controls
+    function togglePlayback() {
+      if (isPlaying) {
+        stopPlayback();
+      } else {
+        startPlayback();
+      }
+    }
+
+    function startPlayback() {
+      if (!audioBuffer) return;
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioContext.destination);
+      
+      const playDuration = trimEnd - trimStart;
+      audioSource.start(0, trimStart, playDuration);
+      
+      playStartTime = audioContext.currentTime;
+      playOffset = trimStart;
+      isPlaying = true;
+      
+      playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      playhead.classList.add('playing');
+      
+      audioSource.onended = () => {
+        stopPlayback();
+      };
+      
+      updatePlayhead();
+    }
+
+    function stopPlayback() {
+      if (audioSource) {
+        audioSource.stop();
+        audioSource = null;
+      }
+      
+      isPlaying = false;
+      playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      playhead.classList.remove('playing');
+      
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+    }
+
+    function updatePlayhead() {
+      if (!isPlaying) return;
+      
+      const elapsed = audioContext.currentTime - playStartTime;
+      const currentTime = playOffset + elapsed;
+      const percent = (currentTime / duration) * 100;
+      
+      playhead.style.left = `${percent}%`;
+      
+      if (currentTime < trimEnd) {
+        animationFrame = requestAnimationFrame(updatePlayhead);
+      }
+    }
+
+    // Trim and download
+    async function handleTrim() {
+      if (!uploadedFile) return;
+      
+      trimBtn.disabled = true;
+      trimBtn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+      hideStatus();
+      
+      try {
+        const formData = new FormData();
+        formData.append('audio', uploadedFile);
+        formData.append('start', trimStart.toFixed(3));
+        formData.append('end', trimEnd.toFixed(3));
+        
+        const response = await fetch('/trimmer/trim', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Trim failed');
+        }
+        
+        // Get the blob and download
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        // Get filename from header or generate
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let downloadFilename = 'trimmed_audio.mp3';
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="(.+)"/);
+          if (match) downloadFilename = match[1];
+        }
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showStatus('success', 'Audio trimmed successfully! Download started.');
+      } catch (err) {
+        showStatus('error', err.message);
+      } finally {
+        trimBtn.disabled = false;
+        trimBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg><span>Trim & Download</span>';
+      }
+    }
+
+    // Utility functions
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function formatTimeDetailed(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.round((seconds % 1) * 1000);
+      return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+    }
+
+    function parseTime(str) {
+      const parts = str.split(':');
+      if (parts.length !== 2) return NaN;
+      
+      const mins = parseInt(parts[0], 10);
+      const secParts = parts[1].split('.');
+      const secs = parseInt(secParts[0], 10);
+      const ms = secParts[1] ? parseInt(secParts[1], 10) / 1000 : 0;
+      
+      return mins * 60 + secs + ms;
+    }
+
+    function showStatus(type, message) {
+      status.className = `status show ${type}`;
+      statusText.textContent = message;
+      
+      const svg = status.querySelector('svg');
+      if (type === 'error') {
+        svg.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>';
+      } else {
+        svg.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>';
+      }
+    }
+
+    function hideStatus() {
+      status.classList.remove('show');
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      if (audioBuffer) {
+        drawWaveform();
+      }
+    });
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
+
