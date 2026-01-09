@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS download_logs (
   video_uploader VARCHAR(255),
   video_duration VARCHAR(50),
   
+  
   -- Download info
   format ENUM('video', 'audio') NOT NULL,
   status ENUM('started', 'completed', 'failed') DEFAULT 'started',
