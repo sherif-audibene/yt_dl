@@ -31,11 +31,21 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 echo 'Setting up environment...'
-                script {
-                    // Copy environment file from Jenkins credentials or create from example
-                    withCredentials([file(credentialsId: 'ytdl-env', variable: 'ENV_FILE')]) {
-                        sh 'cp $ENV_FILE .env'
-                    }
+                // Use Jenkins credentials for sensitive data
+                withCredentials([
+                    string(credentialsId: 'ytdl-db-password', variable: 'DB_PASSWORD')
+                ]) {
+                    sh '''
+                        cat > .env << EOF
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=app_user
+DB_PASSWORD=${DB_PASSWORD}
+DB_NAME=app_db
+NODE_ENV=production
+PORT=3000
+EOF
+                    '''
                 }
             }
         }
@@ -110,22 +120,22 @@ pipeline {
                     sh """
                         cd ${APP_DIR}
                         
-                        # Check if PM2 is installed globally
-                        if ! command -v pm2 &> /dev/null; then
-                            sudo npm install -g pm2
+                        # Install pm2 locally if not present
+                        if [ ! -f node_modules/.bin/pm2 ]; then
+                            npm install pm2
                         fi
                         
                         # Stop existing process if running
-                        pm2 delete ${APP_NAME} || true
+                        npx pm2 delete ${APP_NAME} || true
                         
                         # Start application with PM2
-                        pm2 start index.js --name ${APP_NAME} --env production
+                        npx pm2 start index.js --name ${APP_NAME} --env production
                         
                         # Save PM2 process list
-                        pm2 save
+                        npx pm2 save
                         
                         # Setup PM2 startup script (run once manually)
-                        # pm2 startup
+                        # npx pm2 startup
                         
                         echo '✅ Application started successfully!'
                     """
@@ -171,7 +181,7 @@ pipeline {
                         sudo rm -rf ${APP_DIR}
                         sudo mv \$LATEST_BACKUP ${APP_DIR}
                         cd ${APP_DIR}
-                        pm2 restart ${APP_NAME} || pm2 start index.js --name ${APP_NAME}
+                        npx pm2 restart ${APP_NAME} || npx pm2 start index.js --name ${APP_NAME}
                     fi
                 """
             }
