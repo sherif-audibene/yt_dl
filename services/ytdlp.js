@@ -48,8 +48,11 @@ const getVideoInfo = (url) => {
 
 /**
  * Downloads video/audio and returns the file path
+ * @param {string} url - Video URL
+ * @param {boolean} isAudio - Download audio only
+ * @param {function} onProgress - Progress callback (percentage)
  */
-const downloadMedia = (url, isAudio = false) => {
+const downloadMedia = (url, isAudio = false, onProgress = null) => {
   return new Promise((resolve, reject) => {
     const sessionId = crypto.randomBytes(8).toString('hex');
     const outputTemplate = path.join(DOWNLOADS_DIR, `${sessionId}_%(title)s.%(ext)s`);
@@ -58,6 +61,7 @@ const downloadMedia = (url, isAudio = false) => {
       '-o', outputTemplate,
       '--no-playlist',
       '--restrict-filenames',
+      '--newline', // Output progress on new lines for easier parsing
     ];
 
     if (isAudio) {
@@ -74,7 +78,17 @@ const downloadMedia = (url, isAudio = false) => {
     let errorOutput = '';
 
     ytdlp.stdout.on('data', (chunk) => {
-      console.log('yt-dlp:', chunk.toString());
+      const output = chunk.toString();
+      console.log('yt-dlp:', output);
+      
+      // Parse progress percentage from yt-dlp output
+      // Format: [download]  45.2% of 10.00MiB at 1.00MiB/s ETA 00:05
+      if (onProgress) {
+        const match = output.match(/\[download\]\s+(\d+\.?\d*)%/);
+        if (match) {
+          onProgress(parseFloat(match[1]));
+        }
+      }
     });
 
     ytdlp.stderr.on('data', (chunk) => {

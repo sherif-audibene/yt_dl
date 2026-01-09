@@ -30,13 +30,23 @@ router.post('/api/info', async (req, res) => {
   }
 });
 
-// Download video/audio
+// Download video/audio with SSE progress
 router.get('/download', async (req, res) => {
   const { url, format } = req.query;
 
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
   }
+
+  // Set up SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const sendEvent = (event, data) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
 
   let logId = null;
 
@@ -47,6 +57,7 @@ router.get('/download', async (req, res) => {
     let videoInfo = null;
     try {
       videoInfo = await getVideoInfo(url);
+      sendEvent('info', { title: videoInfo.title });
     } catch (e) {
       // Continue even if we can't get video info
     }
@@ -60,27 +71,45 @@ router.get('/download', async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    const { filePath, filename } = await downloadMedia(url, isAudio);
+    // Progress callback
+    const onProgress = (percent) => {
+      sendEvent('progress', { percent: Math.round(percent) });
+    };
 
-    console.log('Serving file:', filePath);
+    const { filePath, filename } = await downloadMedia(url, isAudio, onProgress);
 
-    res.download(filePath, filename, async (err) => {
-      removeFile(filePath);
+    console.log('Download complete:', filePath);
 
-      if (err && !res.headersSent) {
-        console.error('Download send error:', err);
-        if (logId) await logDownloadFailed(logId, err.message);
-        res.status(500).json({ error: 'Failed to send file' });
-      } else if (!err && logId) {
-        await logDownloadComplete(logId);
-      }
+    // Send completion event with download URL
+    sendEvent('complete', { 
+      downloadUrl: `/file/${encodeURIComponent(filename)}?path=${encodeURIComponent(filePath)}` 
     });
+
+    if (logId) await logDownloadComplete(logId);
+    res.end();
   } catch (error) {
+    sendEvent('error', { message: error.message });
     if (logId) await logDownloadFailed(logId, error.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
-    }
+    res.end();
   }
+});
+
+// Serve downloaded file
+router.get('/file/:filename', (req, res) => {
+  const { path: filePath } = req.query;
+  const { filename } = req.params;
+
+  if (!filePath) {
+    return res.status(400).json({ error: 'File path required' });
+  }
+
+  res.download(filePath, filename, (err) => {
+    removeFile(filePath);
+    if (err && !res.headersSent) {
+      console.error('File send error:', err);
+      res.status(500).json({ error: 'Failed to send file' });
+    }
+  });
 });
 
 // Stats API endpoint
