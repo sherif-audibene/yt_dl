@@ -22,6 +22,28 @@ const getCookiesArgs = (url) => {
 };
 
 /**
+ * Get yt-dlp version
+ */
+const getVersion = () => {
+  return new Promise((resolve) => {
+    const ytdlp = spawn('yt-dlp', ['--version']);
+    let version = '';
+
+    ytdlp.stdout.on('data', (chunk) => {
+      version += chunk.toString().trim();
+    });
+
+    ytdlp.on('close', () => {
+      resolve(version || 'unknown');
+    });
+
+    ytdlp.on('error', () => {
+      resolve('unknown');
+    });
+  });
+};
+
+/**
  * Fetches video metadata from a URL
  */
 const getVideoInfo = (url) => {
@@ -70,7 +92,11 @@ const getVideoInfo = (url) => {
  * @param {boolean} isAudio - Download audio only
  * @param {function} onProgress - Progress callback (percentage)
  */
-const downloadMedia = (url, isAudio = false, onProgress = null) => {
+const downloadMedia = async (url, isAudio = false, onProgress = null) => {
+  // Print yt-dlp version before starting
+  const version = await getVersion();
+  console.log('yt-dlp version:', version);
+
   return new Promise((resolve, reject) => {
     const sessionId = crypto.randomBytes(8).toString('hex');
     const outputTemplate = path.join(DOWNLOADS_DIR, `${sessionId}_%(title)s.%(ext)s`);

@@ -104,7 +104,8 @@ router.get('/file/:filename', (req, res) => {
   }
 
   res.download(filePath, filename, (err) => {
-    removeFile(filePath);
+    // Keep files instead of deleting after download
+    // removeFile(filePath);
     if (err && !res.headersSent) {
       console.error('File send error:', err);
       res.status(500).json({ error: 'Failed to send file' });
