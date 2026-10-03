@@ -4,6 +4,9 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { DOWNLOADS_DIR, FIREFOX_PROFILE } = require('../config');
 
+// Env may set XDG_CACHE_HOME to an unwritable dir (e.g. /config/xdg/cache under Jenkins)
+const CACHE_DIR = path.join(require('os').tmpdir(), 'yt-dlp-cache');
+
 /**
  * Check if URL is a YouTube URL
  */
@@ -46,7 +49,7 @@ const getVersion = () => {
  */
 const getVideoInfo = (url) => {
   return new Promise((resolve, reject) => {
-    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', '--js-runtimes', 'node', ...getCookiesArgs(url), url];
+    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', '--js-runtimes', 'node', '--cache-dir', CACHE_DIR, ...getCookiesArgs(url), url];
     const ytdlp = spawn('yt-dlp', args);
 
     let data = '';
@@ -105,7 +108,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
       '--no-playlist',
       '--restrict-filenames',
       '--newline', // Output progress on new lines for easier parsing
-      '--remote-components', 'ejs:github', '--js-runtimes', 'node',
+      '--remote-components', 'ejs:github', '--js-runtimes', 'node', '--cache-dir', CACHE_DIR,
       ...getCookiesArgs(url),
     ];
 
