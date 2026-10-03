@@ -158,10 +158,10 @@ EOF
                     sh """
                         sleep 5
                         
-                        # Check if the app is responding
+                        # App must be up and require auth (401 without credentials)
                         HTTP_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${APP_PORT}/)
                         
-                        if [ "\$HTTP_STATUS" -eq 200 ]; then
+                        if [ "\$HTTP_STATUS" -eq 401 ]; then
                             echo "✅ Health check passed! Status: \$HTTP_STATUS"
                         else
                             echo "❌ Health check failed! Status: \$HTTP_STATUS"
