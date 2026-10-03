@@ -146,6 +146,12 @@ EOF
                         # Setup PM2 startup script (run once manually)
                         # npx pm2 startup
                         
+                        # Install Monit checks (skipped if monit isn't installed)
+                        if command -v monit >/dev/null; then
+                            sudo cp ${WORKSPACE}/monit/ytdl.conf /etc/monit/conf.d/ytdl.conf
+                            sudo monit -t && sudo monit reload
+                        fi
+
                         echo '✅ Application started successfully!'
                     """
                 }
