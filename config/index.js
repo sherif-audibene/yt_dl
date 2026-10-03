@@ -4,6 +4,8 @@ require('dotenv').config();
 module.exports = {
   PORT: process.env.PORT || 3000,
   DOWNLOADS_DIR: path.join(__dirname, '..', 'downloads'),
+  // Firefox profile dir for yt-dlp cookies; empty = default profile of the app's user
+  FIREFOX_PROFILE: process.env.FIREFOX_PROFILE || '',
   FILE_CLEANUP_AGE_MS: 3600000, // 1 hour
 
   // Database

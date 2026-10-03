@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { DOWNLOADS_DIR } = require('../config');
+const { DOWNLOADS_DIR, FIREFOX_PROFILE } = require('../config');
 
 /**
  * Check if URL is a YouTube URL
@@ -15,7 +15,8 @@ const isYouTubeUrl = (url) => {
  * Get cookies args for YouTube URLs (from Firefox)
  */
 const getCookiesArgs = (url) => {
-  return isYouTubeUrl(url) ? ['--cookies-from-browser', 'firefox'] : [];
+  const browser = FIREFOX_PROFILE ? `firefox:${FIREFOX_PROFILE}` : 'firefox';
+  return isYouTubeUrl(url) ? ['--cookies-from-browser', browser] : [];
 };
 
 /**

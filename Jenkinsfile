@@ -44,6 +44,7 @@ DB_PASSWORD=${DB_PASSWORD}
 DB_NAME=app_db
 NODE_ENV=production
 PORT=3000
+FIREFOX_PROFILE=/home/sherifs/.mozilla/firefox/ged2dex4.default-esr
 EOF
                     '''
                 }
@@ -118,6 +119,8 @@ EOF
                 echo 'Restarting application with PM2...'
                 script {
                     sh """
+                        # Stop Jenkins from killing the PM2 daemon when the build ends
+                        export JENKINS_NODE_COOKIE=dontKillMe
                         cd ${APP_DIR}
                         
                         # Install pm2 locally if not present
@@ -176,6 +179,7 @@ EOF
                 // Rollback on failure
                 sh """
                     LATEST_BACKUP=\$(ls -td ${APP_DIR}.backup.* 2>/dev/null | head -1)
+                    export JENKINS_NODE_COOKIE=dontKillMe
                     if [ -n "\$LATEST_BACKUP" ]; then
                         echo "Rolling back to: \$LATEST_BACKUP"
                         sudo rm -rf ${APP_DIR}
