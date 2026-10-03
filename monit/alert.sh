@@ -1,6 +1,6 @@
 #!/bin/sh
 # Monit "exec" hook: emails the event via the email API.
-# Installed to /usr/local/bin/monit-alert by Jenkins. Token lives in /etc/monit/alert-token (root-only, not in git).
+# Installed to /usr/local/bin/monit-alert by Jenkins. Token is written to /etc/monit/alert-token (root-only) from Jenkins credential monit-alert-token.
 TOKEN=$(cat /etc/monit/alert-token) || exit 1
 
 python3 - <<'EOF' | curl -sS --max-time 20 https://email.sherifs.de/send-email \

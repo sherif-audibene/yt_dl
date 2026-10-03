@@ -146,15 +146,21 @@ EOF
                         # Setup PM2 startup script (run once manually)
                         # npx pm2 startup
                         
-                        # Install Monit checks (skipped if monit isn't installed)
-                        if command -v monit >/dev/null; then
-                            sudo install -m 755 ${WORKSPACE}/monit/alert.sh /usr/local/bin/monit-alert
-                            sudo cp ${WORKSPACE}/monit/ytdl.conf /etc/monit/conf.d/ytdl.conf
-                            sudo monit -t && sudo monit reload
-                        fi
-
                         echo '✅ Application started successfully!'
                     """
+
+                    // Install Monit checks + alert token (skipped if monit isn't installed).
+                    // Single-quoted sh so the secret is expanded by the shell, not interpolated by Groovy.
+                    withCredentials([string(credentialsId: 'monit-alert-token', variable: 'ALERT_TOKEN')]) {
+                        sh '''
+                            if command -v monit >/dev/null; then
+                                printf %s "$ALERT_TOKEN" | sudo sh -c 'umask 077; cat > /etc/monit/alert-token'
+                                sudo install -m 755 "$WORKSPACE/monit/alert.sh" /usr/local/bin/monit-alert
+                                sudo cp "$WORKSPACE/monit/ytdl.conf" /etc/monit/conf.d/ytdl.conf
+                                sudo monit -t && sudo monit reload
+                            fi
+                        '''
+                    }
                 }
             }
         }
