@@ -1,5 +1,7 @@
 const express = require('express');
+const path = require('path');
 const router = express.Router();
+const { DOWNLOADS_DIR } = require('../config');
 const { getVideoInfo, downloadMedia } = require('../services/ytdlp');
 const { removeFile } = require('../utils/cleanup');
 const { logDownloadStart, logDownloadComplete, logDownloadFailed, getStats } = require('../services/logger');
@@ -105,7 +107,13 @@ router.get('/file/:filename', (req, res) => {
     return res.status(400).json({ error: 'File path required' });
   }
 
-  res.download(filePath, filename, (err) => {
+  // Only serve files directly inside downloads/ (blocks ../ and absolute paths elsewhere)
+  const resolved = path.resolve(filePath);
+  if (path.dirname(resolved) !== DOWNLOADS_DIR) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  res.download(resolved, filename, (err) => {
     // Keep files instead of deleting after download
     // removeFile(filePath);
     if (err && !res.headersSent) {

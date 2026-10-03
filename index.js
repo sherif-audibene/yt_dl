@@ -5,6 +5,7 @@ const { PORT } = require('./config');
 const downloadRoutes = require('./routes/download');
 const trimmerRoutes = require('./routes/trimmer');
 const { ensureDownloadsDir, cleanupOldFiles } = require('./utils/cleanup');
+const basicAuth = require('./utils/auth');
 
 const app = express();
 
@@ -14,6 +15,9 @@ ensureDownloadsDir();
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Auth gate: every route below requires HTTP Basic Auth
+app.use(basicAuth);
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));

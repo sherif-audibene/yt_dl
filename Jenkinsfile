@@ -33,7 +33,8 @@ pipeline {
                 echo 'Setting up environment...'
                 // Use Jenkins credentials for sensitive data
                 withCredentials([
-                    string(credentialsId: 'ytdl-db-password', variable: 'DB_PASSWORD')
+                    string(credentialsId: 'ytdl-db-password', variable: 'DB_PASSWORD'),
+                    usernamePassword(credentialsId: 'ytdl-web-login', usernameVariable: 'AUTH_USER', passwordVariable: 'AUTH_PASSWORD')
                 ]) {
                     sh '''
                         cat > .env << EOF
@@ -45,6 +46,8 @@ DB_NAME=app_db
 NODE_ENV=production
 PORT=3000
 FIREFOX_PROFILE=/home/sherifs/.mozilla/firefox/ged2dex4.default-esr
+AUTH_USER=${AUTH_USER}
+AUTH_PASSWORD=${AUTH_PASSWORD}
 EOF
                     '''
                 }

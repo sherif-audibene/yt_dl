@@ -8,6 +8,10 @@ module.exports = {
   FIREFOX_PROFILE: process.env.FIREFOX_PROFILE || '',
   FILE_CLEANUP_AGE_MS: 3600000, // 1 hour
 
+  // HTTP Basic Auth credentials (required)
+  AUTH_USER: process.env.AUTH_USER,
+  AUTH_PASSWORD: process.env.AUTH_PASSWORD,
+
   // Database
   db: {
     host: process.env.DB_HOST || 'localhost',
