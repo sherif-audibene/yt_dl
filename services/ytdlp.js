@@ -43,6 +43,17 @@ const getVersion = () => {
 };
 
 /**
+ * Builds a user-facing error from yt-dlp stderr: keeps only "ERROR:" lines
+ * (stderr also carries warnings and tracebacks) and drops the "[extractor] id:" prefix
+ */
+const ytdlpError = (stderr, fallback) => {
+  const messages = stderr.split('\n')
+    .filter((line) => line.startsWith('ERROR:'))
+    .map((line) => line.replace(/^ERROR:\s*(\[[^\]]+\]\s*([^:\s]+:\s*)?)?/, ''));
+  return new Error(messages.join('\n') || fallback);
+};
+
+/**
  * Fetches video metadata from a URL
  */
 const getVideoInfo = (url) => {
@@ -63,7 +74,7 @@ const getVideoInfo = (url) => {
 
     ytdlp.on('close', (code) => {
       if (code !== 0) {
-        return reject(new Error(error || 'Failed to fetch video info'));
+        return reject(ytdlpError(error, 'Failed to fetch video info'));
       }
 
       try {
@@ -146,7 +157,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
     ytdlp.on('close', (code) => {
       if (code !== 0) {
         console.error('yt-dlp failed with code:', code);
-        return reject(new Error(errorOutput || 'Download failed'));
+        return reject(ytdlpError(errorOutput, 'Download failed'));
       }
 
       const filePath = stdout.trim().split('\n').pop();
@@ -165,6 +176,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
 };
 
 module.exports = {
+  ytdlpError,
   getVideoInfo,
   downloadMedia,
 };

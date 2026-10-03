@@ -606,6 +606,7 @@
         hideStatus();
       } catch (err) {
         preview.classList.remove('show');
+        showStatus('error', err.message || 'Could not load video info');
       }
     }
 
