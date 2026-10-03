@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { DOWNLOADS_DIR, COOKIES_FILE } = require('../config');
+const { DOWNLOADS_DIR } = require('../config');
 
 /**
  * Check if URL is a YouTube URL
@@ -12,13 +12,10 @@ const isYouTubeUrl = (url) => {
 };
 
 /**
- * Get cookies args if YouTube URL and cookies file exists
+ * Get cookies args for YouTube URLs (from Firefox)
  */
 const getCookiesArgs = (url) => {
-  if (isYouTubeUrl(url) && fs.existsSync(COOKIES_FILE)) {
-    return ['--cookies', COOKIES_FILE];
-  }
-  return [];
+  return isYouTubeUrl(url) ? ['--cookies-from-browser', 'firefox'] : [];
 };
 
 /**
@@ -48,7 +45,7 @@ const getVersion = () => {
  */
 const getVideoInfo = (url) => {
   return new Promise((resolve, reject) => {
-    const args = ['--dump-json', '--no-playlist', ...getCookiesArgs(url), url];
+    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', ...getCookiesArgs(url), url];
     const ytdlp = spawn('yt-dlp', args);
 
     let data = '';
@@ -91,8 +88,9 @@ const getVideoInfo = (url) => {
  * @param {string} url - Video URL
  * @param {boolean} isAudio - Download audio only
  * @param {function} onProgress - Progress callback (percentage)
+ * @param {number|null} maxHeight - Max video height (e.g. 720), null = best
  */
-const downloadMedia = async (url, isAudio = false, onProgress = null) => {
+const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight = 720) => {
   // Print yt-dlp version before starting
   const version = await getVersion();
   console.log('yt-dlp version:', version);
@@ -106,13 +104,15 @@ const downloadMedia = async (url, isAudio = false, onProgress = null) => {
       '--no-playlist',
       '--restrict-filenames',
       '--newline', // Output progress on new lines for easier parsing
+      '--remote-components', 'ejs:github',
       ...getCookiesArgs(url),
     ];
 
     if (isAudio) {
       args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
     } else {
-      args.push('--recode-video', 'mp4');
+      const h = maxHeight ? `[height<=${maxHeight}]` : '';
+      args.push('-f', `bv*${h}+ba/b${h}`, '--merge-output-format', 'mp4');
     }
 
     args.push(url);

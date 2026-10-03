@@ -30,9 +30,11 @@ router.post('/api/info', async (req, res) => {
   }
 });
 
+const QUALITIES = ['360', '480', '720', '1080', 'best'];
+
 // Download video/audio with SSE progress
 router.get('/download', async (req, res) => {
-  const { url, format } = req.query;
+  const { url, format, quality } = req.query;
 
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
@@ -76,7 +78,7 @@ router.get('/download', async (req, res) => {
       sendEvent('progress', { percent: Math.round(percent) });
     };
 
-    const { filePath, filename } = await downloadMedia(url, isAudio, onProgress);
+    const { filePath, filename } = await downloadMedia(url, isAudio, onProgress, QUALITIES.includes(quality) ? Number(quality) || null : 720);
 
     console.log('Download complete:', filePath);
 

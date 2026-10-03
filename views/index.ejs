@@ -153,7 +153,7 @@
       transition: fill 0.2s;
     }
 
-    input[type="text"] {
+    input[type="text"], select {
       width: 100%;
       padding: 16px 16px 16px 48px;
       background: var(--bg-secondary);
@@ -165,7 +165,7 @@
       transition: all 0.2s;
     }
 
-    input[type="text"]:focus {
+    input[type="text"]:focus, select:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 4px var(--accent-glow);
@@ -481,6 +481,17 @@
           </div>
         </div>
 
+        <div class="input-group">
+          <label for="quality">Video Quality</label>
+          <select id="quality" name="quality" style="padding-left: 16px">
+            <option value="360">360p</option>
+            <option value="480">480p</option>
+            <option value="720" selected>720p</option>
+            <option value="1080">1080p</option>
+            <option value="best">Best</option>
+          </select>
+        </div>
+
         <button type="submit" class="btn btn-primary" id="downloadBtn">
           <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
           <span>Download</span>
@@ -618,7 +629,7 @@
       setLoading(true, 0);
       hideStatus();
 
-      const downloadUrl = `/download?url=${encodeURIComponent(url)}&format=${format}`;
+      const downloadUrl = `/download?url=${encodeURIComponent(url)}&format=${format}&quality=${document.getElementById('quality').value}`;
       
       // Use Server-Sent Events for progress
       const eventSource = new EventSource(downloadUrl);
