@@ -86,7 +86,7 @@ router.get('/download', async (req, res) => {
 
     // Send completion event with download URL
     sendEvent('complete', { 
-      downloadUrl: `/file/${encodeURIComponent(filename)}?path=${encodeURIComponent(filePath)}` 
+      downloadUrl: `/file/${encodeURIComponent(filename)}` 
     });
 
     if (logId) await logDownloadComplete(logId);
@@ -100,25 +100,15 @@ router.get('/download', async (req, res) => {
 
 // Serve downloaded file
 router.get('/file/:filename', (req, res) => {
-  const { path: filePath } = req.query;
-  const { filename } = req.params;
+  // basename() strips any ../ so only files inside DOWNLOADS_DIR can be served
+  const filename = path.basename(req.params.filename);
 
-  if (!filePath) {
-    return res.status(400).json({ error: 'File path required' });
-  }
-
-  // Only serve files directly inside downloads/ (blocks ../ and absolute paths elsewhere)
-  const resolved = path.resolve(filePath);
-  if (path.dirname(resolved) !== DOWNLOADS_DIR) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  res.download(resolved, filename, (err) => {
+  res.download(path.join(DOWNLOADS_DIR, filename), filename, (err) => {
     // Keep files instead of deleting after download
     // removeFile(filePath);
     if (err && !res.headersSent) {
       console.error('File send error:', err);
-      res.status(500).json({ error: 'Failed to send file' });
+      res.status(err.status || 500).json({ error: 'Failed to send file' });
     }
   });
 });

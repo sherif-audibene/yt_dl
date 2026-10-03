@@ -1,7 +1,5 @@
 const { spawn } = require('child_process');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 const { DOWNLOADS_DIR, FIREFOX_PROFILE } = require('../config');
 
 // Env may set XDG_CACHE_HOME to an unwritable dir (e.g. /config/xdg/cache under Jenkins)
@@ -100,14 +98,12 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
   console.log('yt-dlp version:', version);
 
   return new Promise((resolve, reject) => {
-    const sessionId = crypto.randomBytes(8).toString('hex');
-    const outputTemplate = path.join(DOWNLOADS_DIR, `${sessionId}_%(title)s.%(ext)s`);
-
+    // Default yt-dlp name: "<title> [<id>].<ext>"; the id keeps same-titled videos apart
     const args = [
-      '-o', outputTemplate,
+      '-P', DOWNLOADS_DIR,
       '--no-playlist',
-      '--restrict-filenames',
       '--newline', // Output progress on new lines for easier parsing
+      '--progress', '--print', 'after_move:filepath', // final path is the last stdout line; --print would otherwise hide progress
       '--remote-components', 'ejs:github', '--js-runtimes', 'node', '--cache-dir', CACHE_DIR,
       ...getCookiesArgs(url),
     ];
@@ -125,9 +121,11 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
 
     const ytdlp = spawn('yt-dlp', args);
     let errorOutput = '';
+    let stdout = '';
 
     ytdlp.stdout.on('data', (chunk) => {
       const output = chunk.toString();
+      stdout += output;
       console.log('yt-dlp:', output);
       
       // Parse progress percentage from yt-dlp output
@@ -151,16 +149,13 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
         return reject(new Error(errorOutput || 'Download failed'));
       }
 
-      const files = fs.readdirSync(DOWNLOADS_DIR).filter(f => f.startsWith(sessionId));
+      const filePath = stdout.trim().split('\n').pop();
 
-      if (files.length === 0) {
+      if (!filePath || !path.isAbsolute(filePath)) {
         return reject(new Error('Download completed but file not found'));
       }
 
-      const downloadedFile = path.join(DOWNLOADS_DIR, files[0]);
-      const originalFilename = files[0].replace(`${sessionId}_`, '');
-
-      resolve({ filePath: downloadedFile, filename: originalFilename });
+      resolve({ filePath, filename: path.basename(filePath) });
     });
 
     ytdlp.on('error', (err) => {

@@ -46,6 +46,7 @@ DB_NAME=app_db
 NODE_ENV=production
 PORT=3000
 FIREFOX_PROFILE=/home/sherifs/.mozilla/firefox/ged2dex4.default-esr
+DOWNLOADS_DIR=/storage/youtube_downloads
 AUTH_USER=${AUTH_USER}
 AUTH_PASSWORD=${AUTH_PASSWORD}
 EOF
@@ -91,7 +92,7 @@ EOF
                     // Create app directory if it doesn't exist
                     sh """
                         sudo mkdir -p ${APP_DIR}
-                        sudo mkdir -p ${APP_DIR}/downloads
+                        sudo mkdir -p /storage/youtube_downloads
                     """
                     
                     // Copy application files
@@ -105,7 +106,7 @@ EOF
                     sh """
                         sudo chown -R \$(whoami):\$(whoami) ${APP_DIR}
                         sudo chmod -R 755 ${APP_DIR}
-                        sudo chmod 777 ${APP_DIR}/downloads
+                        sudo chown \$(whoami):\$(whoami) /storage/youtube_downloads
                     """
                     
                     // Install production dependencies

@@ -4,12 +4,15 @@ const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs');
-const { DOWNLOADS_DIR } = require('../config');
+const os = require('os');
+
+// Trimmer files are temporary; keep them out of the downloads storage
+const TMP_DIR = os.tmpdir();
 
 // Configure multer for audio uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, DOWNLOADS_DIR);
+    cb(null, TMP_DIR);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -54,7 +57,7 @@ router.post('/trimmer/trim', upload.single('audio'), async (req, res) => {
   const duration = endTime - startTime;
   const inputPath = req.file.path;
   const outputFilename = `trimmed-${Date.now()}.mp3`;
-  const outputPath = path.join(DOWNLOADS_DIR, outputFilename);
+  const outputPath = path.join(TMP_DIR, outputFilename);
 
   try {
     await new Promise((resolve, reject) => {

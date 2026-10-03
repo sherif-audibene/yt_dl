@@ -4,7 +4,7 @@ const path = require('path');
 const { PORT } = require('./config');
 const downloadRoutes = require('./routes/download');
 const trimmerRoutes = require('./routes/trimmer');
-const { ensureDownloadsDir, cleanupOldFiles } = require('./utils/cleanup');
+const { ensureDownloadsDir } = require('./utils/cleanup');
 const basicAuth = require('./utils/auth');
 
 const app = express();
@@ -27,9 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/', downloadRoutes);
 app.use('/', trimmerRoutes);
-
-// Clean up old files on startup
-cleanupOldFiles();
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
