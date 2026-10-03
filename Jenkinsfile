@@ -148,6 +148,7 @@ EOF
                         
                         # Install Monit checks (skipped if monit isn't installed)
                         if command -v monit >/dev/null; then
+                            sudo install -m 755 ${WORKSPACE}/monit/alert.sh /usr/local/bin/monit-alert
                             sudo cp ${WORKSPACE}/monit/ytdl.conf /etc/monit/conf.d/ytdl.conf
                             sudo monit -t && sudo monit reload
                         fi
