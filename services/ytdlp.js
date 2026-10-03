@@ -46,7 +46,7 @@ const getVersion = () => {
  */
 const getVideoInfo = (url) => {
   return new Promise((resolve, reject) => {
-    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', '--js-runtimes', 'node', ...getCookiesArgs(url), url];
+    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', ...getCookiesArgs(url), url];
     const ytdlp = spawn('yt-dlp', args);
 
     let data = '';
@@ -105,7 +105,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
       '--no-playlist',
       '--restrict-filenames',
       '--newline', // Output progress on new lines for easier parsing
-      '--remote-components', 'ejs:github', '--js-runtimes', 'node',
+      '--remote-components', 'ejs:github',
       ...getCookiesArgs(url),
     ];
 
