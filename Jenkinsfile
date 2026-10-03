@@ -121,6 +121,8 @@ EOF
                     sh """
                         # Stop Jenkins from killing the PM2 daemon when the build ends
                         export JENKINS_NODE_COOKIE=dontKillMe
+                        # Jenkins' service PATH lacks /usr/local/bin, where yt-dlp lives
+                        export PATH=/usr/local/bin:\$PATH
                         cd ${APP_DIR}
                         
                         # Install pm2 locally if not present
