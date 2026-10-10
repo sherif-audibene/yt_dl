@@ -1,9 +1,11 @@
 const { spawn } = require('child_process');
 const path = require('path');
-const { DOWNLOADS_DIR, FIREFOX_PROFILE } = require('../config');
+const { DOWNLOADS_DIR, FIREFOX_PROFILE, YTDLP_PATH, DENO_PATH } = require('../config');
 
 // Env may set XDG_CACHE_HOME to an unwritable dir (e.g. /config/xdg/cache under Jenkins)
 const CACHE_DIR = path.join(require('os').tmpdir(), 'yt-dlp-cache');
+
+const COMMON_ARGS = ['--remote-components', 'ejs:github', '--js-runtimes', `deno:${DENO_PATH}`, '--cache-dir', CACHE_DIR];
 
 /**
  * Check if URL is a YouTube URL
@@ -25,7 +27,7 @@ const getCookiesArgs = (url) => {
  */
 const getVersion = () => {
   return new Promise((resolve) => {
-    const ytdlp = spawn('yt-dlp', ['--version']);
+    const ytdlp = spawn(YTDLP_PATH, ['--version']);
     let version = '';
 
     ytdlp.stdout.on('data', (chunk) => {
@@ -58,8 +60,8 @@ const ytdlpError = (stderr, fallback) => {
  */
 const getVideoInfo = (url) => {
   return new Promise((resolve, reject) => {
-    const args = ['--dump-json', '--no-playlist', '--remote-components', 'ejs:github', '--js-runtimes', 'node', '--cache-dir', CACHE_DIR, ...getCookiesArgs(url), url];
-    const ytdlp = spawn('yt-dlp', args);
+    const args = ['--dump-json', '--no-playlist', ...COMMON_ARGS, ...getCookiesArgs(url), url];
+    const ytdlp = spawn(YTDLP_PATH, args);
 
     let data = '';
     let error = '';
@@ -115,7 +117,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
       '--no-playlist',
       '--newline', // Output progress on new lines for easier parsing
       '--progress', '--print', 'after_move:filepath', // final path is the last stdout line; --print would otherwise hide progress
-      '--remote-components', 'ejs:github', '--js-runtimes', 'node', '--cache-dir', CACHE_DIR,
+      ...COMMON_ARGS,
       ...getCookiesArgs(url),
     ];
 
@@ -130,7 +132,7 @@ const downloadMedia = async (url, isAudio = false, onProgress = null, maxHeight 
 
     console.log('Starting download:', args.join(' '));
 
-    const ytdlp = spawn('yt-dlp', args);
+    const ytdlp = spawn(YTDLP_PATH, args);
     let errorOutput = '';
     let stdout = '';
 

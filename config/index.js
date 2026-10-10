@@ -6,6 +6,9 @@ module.exports = {
   DOWNLOADS_DIR: process.env.DOWNLOADS_DIR || path.join(__dirname, '..', 'downloads'),
   // Firefox profile dir for yt-dlp cookies; empty = default profile of the app's user
   FIREFOX_PROFILE: process.env.FIREFOX_PROFILE || '',
+  YTDLP_PATH: process.env.YTDLP_PATH || '/usr/local/bin/yt-dlp',
+  // yt-dlp needs a JS runtime to solve YouTube's challenges
+  DENO_PATH: process.env.DENO_PATH || '/home/sherifs/.deno/bin/deno',
 
   // HTTP Basic Auth credentials (required)
   AUTH_USER: process.env.AUTH_USER,
