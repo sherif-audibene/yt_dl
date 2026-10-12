@@ -664,23 +664,21 @@
         showStatus('success', 'Download complete! Check your downloads folder.');
       });
 
+      // Fires for both the server's "error" event (has data) and a dropped connection (no data)
       eventSource.addEventListener('error', (e) => {
         eventSource.close();
         setLoading(false);
-        
+
+        if (!e.data) {
+          showStatus('error', 'Connection lost. Please try again.');
+          return;
+        }
         try {
-          const data = JSON.parse(e.data);
-          showStatus('error', data.message || 'Download failed');
+          showStatus('error', JSON.parse(e.data).message || 'Download failed');
         } catch {
           showStatus('error', 'Download failed. Please try again.');
         }
       });
-
-      eventSource.onerror = () => {
-        eventSource.close();
-        setLoading(false);
-        showStatus('error', 'Connection lost. Please try again.');
-      };
     });
 
     function setLoading(loading, percent = null) {
