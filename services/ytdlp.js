@@ -11,7 +11,7 @@ const COMMON_ARGS = ['--remote-components', 'ejs:github', '--js-runtimes', `deno
 // Add a domain here when a site starts failing with login/age/rate-limit errors.
 const COOKIE_DOMAINS = [
   'youtube.com', 'youtu.be', 'youtube-nocookie.com',
-  'instagram.com', 'facebook.com', 'fb.watch',
+  'instagram.com',
   'x.com', 'twitter.com', 'tiktok.com', 'reddit.com',
 ];
 
