@@ -456,7 +456,7 @@
         <div class="input-group">
           <label for="url">Video URL</label>
           <div class="input-wrapper">
-            <input type="text" id="url" name="url" placeholder="/watch?v=..." required>
+            <input type="text" id="url" name="url" placeholder="https://..." required>
             <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
           </div>
         </div>
@@ -543,7 +543,7 @@
       clearTimeout(debounceTimer);
       const url = urlInput.value.trim();
       
-      if (!url || !isValidYoutubeUrl(url)) {
+      if (!url || !isValidUrl(url)) {
         preview.classList.remove('show');
         return;
       }
@@ -551,10 +551,13 @@
       debounceTimer = setTimeout(() => fetchVideoInfo(cleanYoutubeUrl(url)), 800);
     });
 
-    function isValidYoutubeUrl(url) {
-      return url.includes('youtube.com/watch') || 
-             url.includes('youtu.be/') || 
-             url.includes('youtube.com/shorts/');
+    // Any http(s) URL; yt-dlp decides if the site is supported
+    function isValidUrl(url) {
+      try {
+        return ['http:', 'https:'].includes(new URL(url).protocol);
+      } catch {
+        return false;
+      }
     }
 
     function cleanYoutubeUrl(url) {
@@ -617,12 +620,12 @@
       const format = document.querySelector('input[name="format"]:checked').value;
 
       if (!rawUrl) {
-        showStatus('error', 'Please enter a YouTube URL');
+        showStatus('error', 'Please enter a video URL');
         return;
       }
 
-      if (!isValidYoutubeUrl(rawUrl)) {
-        showStatus('error', 'Please enter a valid YouTube URL');
+      if (!isValidUrl(rawUrl)) {
+        showStatus('error', 'Please enter a valid http(s) URL');
         return;
       }
 

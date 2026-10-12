@@ -7,19 +7,33 @@ const CACHE_DIR = path.join(require('os').tmpdir(), 'yt-dlp-cache');
 
 const COMMON_ARGS = ['--remote-components', 'ejs:github', '--js-runtimes', `deno:${DENO_PATH}`, '--cache-dir', CACHE_DIR];
 
+// Sites that need (or work better with) the logged-in Firefox session.
+// Add a domain here when a site starts failing with login/age/rate-limit errors.
+const COOKIE_DOMAINS = [
+  'youtube.com', 'youtu.be', 'youtube-nocookie.com',
+  'instagram.com', 'facebook.com', 'fb.watch',
+  'x.com', 'twitter.com', 'tiktok.com', 'reddit.com',
+];
+
 /**
- * Check if URL is a YouTube URL
+ * Check if URL's host is (a subdomain of) one of COOKIE_DOMAINS
  */
-const isYouTubeUrl = (url) => {
-  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)/i.test(url);
+const needsCookies = (url) => {
+  let host;
+  try {
+    host = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return COOKIE_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
 };
 
 /**
- * Get cookies args for YouTube URLs (from Firefox)
+ * Get cookies args for sites that need a login (from Firefox)
  */
 const getCookiesArgs = (url) => {
   const browser = FIREFOX_PROFILE ? `firefox:${FIREFOX_PROFILE}` : 'firefox';
-  return isYouTubeUrl(url) ? ['--cookies-from-browser', browser] : [];
+  return needsCookies(url) ? ['--cookies-from-browser', browser] : [];
 };
 
 /**
