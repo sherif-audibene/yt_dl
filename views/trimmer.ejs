@@ -847,12 +847,10 @@
         startTimeInput.value = '0:00.000';
         document.getElementById('endTimeDisplay').textContent = formatTime(duration);
         
-        // Draw waveform
+        // Show editor before drawing: a hidden canvas has 0 width
+        editorCard.classList.add('show');
         drawWaveform();
         updateSelection();
-        
-        // Show editor
-        editorCard.classList.add('show');
       } catch (err) {
         showStatus('error', 'Failed to load audio file');
         console.error(err);
