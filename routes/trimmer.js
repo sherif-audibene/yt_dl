@@ -22,13 +22,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit (videos)
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav', 'audio/ogg', 'audio/mp4', 'audio/m4a', 'audio/x-m4a'];
-    if (allowedTypes.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+    if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('video/') || file.originalname.match(/\.(mp3|wav|ogg|m4a|aac|mp4|mov|webm|mkv)$/i)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only audio files are allowed.'));
+      cb(new Error('Invalid file type. Only audio or video files are allowed.'));
     }
   }
 });
@@ -56,17 +56,27 @@ router.post('/trimmer/trim', upload.single('audio'), async (req, res) => {
 
   const duration = endTime - startTime;
   const inputPath = req.file.path;
-  const outputFilename = `trimmed-${Date.now()}.mp3`;
+  const asVideo = req.body.format === 'mp4';
+  const ext = asVideo ? 'mp4' : 'mp3';
+  const outputFilename = `trimmed-${Date.now()}.${ext}`;
   const outputPath = path.join(TMP_DIR, outputFilename);
 
   try {
     await new Promise((resolve, reject) => {
-      ffmpeg(inputPath)
+      const cmd = ffmpeg(inputPath)
         .setStartTime(startTime)
-        .setDuration(duration)
-        .audioCodec('libmp3lame')
-        .audioBitrate('192k')
-        .output(outputPath)
+        .setDuration(duration);
+      if (asVideo) {
+        // Re-encode so the cut is frame-accurate (stream copy snaps to keyframes)
+        cmd.videoCodec('libx264')
+          .audioCodec('aac')
+          .outputOptions(['-preset veryfast', '-crf 23', '-movflags +faststart']);
+      } else {
+        cmd.noVideo()
+          .audioCodec('libmp3lame')
+          .audioBitrate('192k');
+      }
+      cmd.output(outputPath)
         .on('end', () => {
           resolve();
         })
@@ -81,11 +91,11 @@ router.post('/trimmer/trim', upload.single('audio'), async (req, res) => {
 
     // Get original filename without extension for the download name
     const originalName = path.parse(req.file.originalname).name;
-    const downloadFilename = `${originalName}_trimmed.mp3`;
+    const downloadFilename = `${originalName}_trimmed.${ext}`;
 
     // Send the trimmed file
     res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
-    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Type', asVideo ? 'video/mp4' : 'audio/mpeg');
 
     const readStream = fs.createReadStream(outputPath);
     readStream.pipe(res);
@@ -102,7 +112,7 @@ router.post('/trimmer/trim', upload.single('audio'), async (req, res) => {
     // Clean up files
     fs.unlink(inputPath, () => {});
     fs.unlink(outputPath, () => {});
-    res.status(500).json({ error: 'Failed to trim audio: ' + error.message });
+    res.status(500).json({ error: 'Failed to trim: ' + error.message });
   }
 });
 

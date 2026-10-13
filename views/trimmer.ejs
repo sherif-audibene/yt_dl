@@ -238,6 +238,19 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    .video-preview {
+      display: block;
+      width: 100%;
+      max-height: 360px;
+      background: #000;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .video-preview[hidden] {
+      display: none;
+    }
+
     .waveform-container {
       position: relative;
       background: var(--bg-secondary);
@@ -369,7 +382,8 @@
       letter-spacing: 0.05em;
     }
 
-    .time-input-group input {
+    .time-input-group input,
+    .time-input-group select {
       width: 100%;
       padding: 12px 14px;
       background: var(--bg-secondary);
@@ -381,7 +395,8 @@
       transition: all 0.2s;
     }
 
-    .time-input-group input:focus {
+    .time-input-group input:focus,
+    .time-input-group select:focus {
       outline: none;
       border-color: var(--accent-secondary);
       box-shadow: 0 0 0 4px rgba(0, 212, 170, 0.2);
@@ -595,12 +610,12 @@
     <!-- Upload Card -->
     <div class="card" id="uploadCard">
       <div class="upload-zone" id="uploadZone">
-        <input type="file" id="fileInput" accept="audio/*" hidden>
+        <input type="file" id="fileInput" accept="audio/*,video/*" hidden>
         <div class="upload-icon">
           <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
         </div>
         <h3>Drop your audio file here</h3>
-        <p>or click to browse (MP3, WAV, M4A, OGG)</p>
+        <p>or click to browse (MP3, WAV, M4A, OGG, or a video)</p>
         <div class="file-info" id="fileInfo" style="display: none;">
           <span class="file-name" id="fileName"></span>
           <button class="remove-file" id="removeFile">
@@ -622,6 +637,8 @@
           <span class="duration-value accent" id="selectedDuration">0:00</span>
         </div>
       </div>
+
+      <video class="video-preview" id="videoPreview" muted playsinline preload="auto" hidden></video>
 
       <div class="waveform-container">
         <div class="waveform-wrapper" id="waveformWrapper">
@@ -653,6 +670,13 @@
           <div class="time-input-group">
             <label for="endTime">End Time</label>
             <input type="text" id="endTime" placeholder="0:00.000">
+          </div>
+          <div class="time-input-group" id="formatGroup" hidden>
+            <label for="format">Download as</label>
+            <select id="format">
+              <option value="mp3">Audio (MP3)</option>
+              <option value="mp4">Video (MP4)</option>
+            </select>
           </div>
         </div>
 
@@ -691,6 +715,7 @@
     const status = document.getElementById('status');
     const statusText = document.getElementById('statusText');
     const playhead = document.getElementById('playhead');
+    const videoPreview = document.getElementById('videoPreview');
     
     // Selection elements
     const selectionLeft = document.getElementById('selectionLeft');
@@ -711,6 +736,8 @@
     let playStartTime = 0;
     let playOffset = 0;
     let animationFrame = null;
+    let lastTrimStart = 0;
+    let lastTrimEnd = 0;
 
     // Initialize
     function init() {
@@ -751,7 +778,7 @@
       e.preventDefault();
       uploadZone.classList.remove('dragover');
       const files = e.dataTransfer.files;
-      if (files.length > 0 && files[0].type.startsWith('audio/')) {
+      if (files.length > 0 && /^(audio|video)\//.test(files[0].type)) {
         loadAudioFile(files[0]);
       }
     }
@@ -778,6 +805,10 @@
       fileInfo.style.display = 'none';
       editorCard.classList.remove('show');
       fileInput.value = '';
+
+      if (videoPreview.src) URL.revokeObjectURL(videoPreview.src);
+      videoPreview.removeAttribute('src');
+      videoPreview.hidden = true;
       
       if (isPlaying) stopPlayback();
     }
@@ -786,6 +817,14 @@
     async function loadAudioFile(file) {
       uploadedFile = file;
       fileName.textContent = file.name;
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|webm|mkv)$/i.test(file.name);
+      document.getElementById('formatGroup').hidden = !isVideo;
+      // Video is a silent visual preview; cutting still follows the audio waveform
+      if (videoPreview.src) URL.revokeObjectURL(videoPreview.src);
+      videoPreview.hidden = !isVideo;
+      if (isVideo) videoPreview.src = URL.createObjectURL(file);
+      else videoPreview.removeAttribute('src');
+      document.getElementById('format').value = 'mp3';
       fileInfo.style.display = 'flex';
       uploadZone.classList.add('has-file');
       
@@ -954,6 +993,13 @@
       document.getElementById('startTimeDisplay').textContent = formatTime(trimStart);
       document.getElementById('endTimeDisplay').textContent = formatTime(trimEnd);
       document.getElementById('selectedDuration').textContent = formatTime(trimEnd - trimStart);
+
+      // Show the frame at whichever edge just moved
+      if (!videoPreview.hidden && !isPlaying) {
+        videoPreview.currentTime = trimEnd !== lastTrimEnd ? trimEnd : trimStart;
+      }
+      lastTrimStart = trimStart;
+      lastTrimEnd = trimEnd;
     }
 
     // Update time inputs
@@ -1005,6 +1051,11 @@
       
       playStartTime = audioContext.currentTime;
       playOffset = trimStart;
+
+      if (!videoPreview.hidden) {
+        videoPreview.currentTime = trimStart;
+        videoPreview.play().catch(() => {});
+      }
       isPlaying = true;
       
       playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
@@ -1025,6 +1076,7 @@
       
       isPlaying = false;
       playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      videoPreview.pause();
       playhead.classList.remove('playing');
       
       if (animationFrame) {
@@ -1060,6 +1112,7 @@
         formData.append('audio', uploadedFile);
         formData.append('start', trimStart.toFixed(3));
         formData.append('end', trimEnd.toFixed(3));
+        formData.append('format', document.getElementById('format').value);
         
         const response = await fetch('/trimmer/trim', {
           method: 'POST',
@@ -1091,7 +1144,7 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showStatus('success', 'Audio trimmed successfully! Download started.');
+        showStatus('success', 'Trimmed successfully! Download started.');
       } catch (err) {
         showStatus('error', err.message);
       } finally {
